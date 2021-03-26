@@ -45,7 +45,7 @@ func initUpCfg() {
 
 func upgrade() {
 	var level, targetLevel int32 = 0, 1
-	var count, failCount int32 = 0, 0
+	var count int32 = 0
 
 	for level < 5 {
 		log := ""
@@ -53,11 +53,11 @@ func upgrade() {
 		cfg := upCfg[level]
 		rate := cfg.BaseRate
 		targetCfg := upCfg[targetLevel]
-		log += fmt.Sprintf("当前等级:%d 目标等级:%d 总次数:%d", level, targetLevel, count)
-		log += fmt.Sprintf(" 目标等级次数:%d 概率:%d", targetCfg.Count, cfg.BaseRate)
-		if count >= targetCfg.Count {
-			rate += cfg.AddRate * failCount
-			log += fmt.Sprintf(" 总次数超过目标等级次数 总概率:%d 额外加的概率:%d*%d=%d", rate, cfg.AddRate, failCount, cfg.AddRate*failCount)
+		log += fmt.Sprintf("当前等级:%d 最高等级:%d 总次数:%d", level, targetLevel, count)
+		log += fmt.Sprintf(" 最高等级次数:%d 概率:%d", targetCfg.Count, cfg.BaseRate)
+		if count > targetCfg.Count {
+			rate += cfg.AddRate * (count - targetCfg.Count)
+			log += fmt.Sprintf(" 总次数超过最高等级次数 总概率:%d 额外加的概率:%d*%d=%d", rate, cfg.AddRate, count-targetCfg.Count, cfg.AddRate*(count-targetCfg.Count))
 		}
 		random := rand.Int31n(100) + 1
 		log += fmt.Sprintf(" 随机数:%d", random)
@@ -66,20 +66,18 @@ func upgrade() {
 			level += 1
 			log += fmt.Sprintf(" 升级成功,新等级:%d", level)
 			if targetLevel <= level {
-				failCount = 0
 				targetLevel = level + 1
-				log += fmt.Sprintf(" 目标等级升一级,失败次数清零")
+				log += fmt.Sprintf(" 最高等级升一级")
 			}
-			log += fmt.Sprintf(" 目标等级:%d", targetLevel)
+			log += fmt.Sprintf(" 最高等级:%d", targetLevel)
 			fmt.Println(log)
 		} else {
-			failCount += 1
 			var loss int32
 			if level > 0 {
 				loss = rand.Int31n(level) + 1
 				level -= loss
 			}
-			log += fmt.Sprintf(" 升级失败掉%d级 新等级:%d 目标等级:%d 失败次数:%d", loss, level, targetLevel, failCount)
+			log += fmt.Sprintf(" 升级失败掉%d级 新等级:%d 最高等级:%d", loss, level, targetLevel)
 			fmt.Println(log)
 			continue
 		}
